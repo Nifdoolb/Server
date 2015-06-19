@@ -1,0 +1,246 @@
+/*
+				Copyright <SWGEmu>
+		See file COPYING for copying conditions.*/
+
+package server.chat.room;
+
+import engine.core.ManagedObject;
+import system.util.VectorMap;
+import system.util.Vector;
+import engine.service.proto.BaseMessage;
+import server.zone.ZoneServer;
+import server.zone.objects.creature.CreatureObject;
+import server.zone.objects.creature.CreatureObject;
+import server.zone.managers.objectcontroller.ObjectController;
+
+class ChatRoom extends ManagedObject {
+	protected ZoneServer server;
+
+	protected string name;
+	protected string fullPath;
+
+	protected string owner;
+	protected string creator;
+
+	protected unicode title;
+	protected unsigned int roomID;
+
+	protected ChatRoom parent;
+
+	@dereferenced 
+	protected VectorMap<string, CreatureObject> playerList;
+	
+	@dereferenced
+	protected VectorMap<string, CreatureObject> moderatorList;
+	
+	@dereferenced 
+	protected VectorMap<string, ChatRoom> subRooms;
+
+	protected boolean isPublicRoom;
+	
+	protected boolean moderated;
+	
+	public ChatRoom() {
+		server = null;
+
+		name = "";
+		roomID = 0;
+
+		owner = "system";
+		creator = "system";
+		title = "";
+		fullPath = "";
+
+		parent = null;
+
+		isPublicRoom = true;
+		
+		moderated = false;
+
+		subRooms.setNullValue(null);
+		subRooms.setNoDuplicateInsertPlan();
+
+		playerList.setNoDuplicateInsertPlan();
+		playerList.setNullValue(null);
+		
+		moderatorList.setNoDuplicateInsertPlan();
+		moderatorList.setNullValue(null);
+	}
+	
+	public void init(ZoneServer serv, ChatRoom par, final string roomName, unsigned int channelID) {
+		server = serv;
+		
+		name = roomName;
+		
+		roomID = channelID;
+		
+		parent = par;
+		
+		owner = "system";
+		creator = "system";
+		title = "";
+		
+		if (par == null) {
+			fullPath = roomName;
+		} else {
+			fullPath = par.getFullPath() + "." + roomName;
+		}
+		
+		isPublicRoom = true;
+
+		subRooms.setNullValue(null);
+		subRooms.setNoDuplicateInsertPlan();
+
+		playerList.setNoDuplicateInsertPlan();
+		playerList.setNullValue(null);
+	}
+		
+	public native void sendTo(CreatureObject player);
+	public native void sendDestroyTo(CreatureObject player);
+
+	public synchronized void addSubRoom(ChatRoom channel) {
+		subRooms.put(channel.getName(), channel);
+	}
+
+	public synchronized void removeSubRoom(ChatRoom channel) {
+		subRooms.drop(channel.getName());
+	}
+
+	public synchronized ChatRoom getSubRoom(int i) {
+		return subRooms.get(i);
+	}
+	
+	public synchronized ChatRoom getSubRoom(final string name) {
+		return subRooms.get(name);
+	}
+
+	public native void addPlayer(CreatureObject player, boolean doLock = true);
+	public native void removePlayer(CreatureObject player, boolean doLock = true);
+	public native void removePlayer(final string player);
+
+	public native void broadcastMessage(BaseMessage msg);
+	public native void broadcastMessageCheckIgnore(BaseMessage msg, string senderName );
+	
+	@local 
+	public synchronized void broadcastMessages(Vector<BaseMessage> messages) {
+		for (int i = 0; i < playerList.size(); ++i) {
+			CreatureObject player = playerList.get(i);
+
+			for (int j = 0; j < messages.size(); ++j) {
+				BaseMessage msg = messages.get(j);
+				player.sendMessage(msg.clone());
+			}
+		}
+
+		for (int j = 0; j < messages.size(); ++j) {
+			BaseMessage msg = messages.get(j);
+			msg.finalize();
+		}
+
+		messages.removeAll();
+	}
+
+	public synchronized boolean hasPlayer(CreatureObject player) {
+		return playerList.contains(player.getFirstName());
+	}
+	
+	public synchronized boolean hasPlayer(final string name) {
+		return playerList.contains(name);
+	}
+
+	public native void removeAllPlayers();
+	
+	public void setPrivate() {
+		isPublicRoom = false;
+	}
+
+	public void setPublic() {
+		isPublicRoom = true;
+	}
+
+	public boolean isPublic() {
+		return isPublicRoom == true;
+	}
+
+	public boolean isPrivate() {
+		return isPublicRoom == false;
+	}
+	
+	public boolean isModerated() {
+		return moderated;
+	}
+	public void setModerated(boolean moderate) {
+		moderated = moderate;
+	}
+
+	public CreatureObject getPlayer(int idx) {
+		return playerList.get(idx);
+	}
+
+	public int getPlayerSize() {
+		return playerList.size();
+	}
+
+	public void setName(final string Name) {
+		name = Name;
+	}
+
+	public string getName() {
+		return name;
+	}
+
+	public string getFullPath() {
+		return fullPath;
+	}
+
+	public string getOwner() {
+		return owner;
+	}
+
+	public string getCreator() {
+		return creator;
+	}
+
+	public unicode getTitle() {
+		return title;
+	}
+
+	public native string getGalaxyName();
+
+	public void setOwner(final string Owner) {
+		owner = Owner;
+	}
+
+	public void setCreator(final string Creator) {
+		creator = Creator;
+	}
+
+	public void setTitle(final string Title) {
+		title = Title;
+	}
+	
+	public void setRoomID(int id) {
+		roomID = id;
+	}
+
+	public unsigned int getRoomID() {
+		return roomID;
+	}
+
+	public int getSubRoomsSize() {
+		return subRooms.size();
+	}
+
+	public ChatRoom getParent() {
+		return parent;
+	}
+
+	public int compareTo(ChatRoom obj) {
+		if (roomID < obj.getRoomID())
+			return 1;
+		else if (roomID > obj.getRoomID())
+			return -1;
+		else
+			return 0;
+	}
+}

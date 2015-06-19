@@ -1,0 +1,24 @@
+/*
+				Copyright <SWGEmu>
+		See file COPYING for copying conditions.*/
+
+package server.zone.objects.installation.garage;
+
+import server.zone.objects.installation.InstallationObject;
+import server.zone.objects.area.ActiveArea;
+
+class GarageInstallation extends InstallationObject {
+	protected ActiveArea garageArea;
+
+	public GarageInstallation() {
+		setLoggingName("ShuttleInstallation");
+	}
+
+	@preLocked
+	public native void createChildObjects();
+
+	public native void notifyRemoveFromZone();
+
+	@preLocked
+	public native void destroyObjectFromDatabase(boolean destroyContainedObjects = false);
+}

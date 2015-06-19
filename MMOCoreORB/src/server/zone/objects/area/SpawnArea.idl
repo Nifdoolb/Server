@@ -1,0 +1,106 @@
+/*
+				Copyright <SWGEmu>
+		See file COPYING for copying conditions.*/
+
+package server.zone.objects.area;
+
+import server.zone.objects.area.ActiveArea;
+import system.util.SortedVector;
+import system.util.HashTable;
+import engine.core.ManagedObject;
+import server.zone.managers.creature.SpawnGroup;
+import server.zone.objects.area.SpawnAreaObserver;
+import engine.util.Observable;
+import server.zone.objects.scene.SceneObject;
+import system.lang.Time;
+
+class SpawnArea extends ActiveArea {
+	protected transient SpawnGroup spawnGroup;
+	protected int totalSpawnCount;
+	protected int maxSpawnLimit;
+
+	@dereferenced
+	protected HashTable<unsigned int, int> spawnCountByType;
+
+	@dereferenced
+	protected HashTable<unsigned long, unsigned int> spawnTypes;
+
+	@dereferenced
+	protected Time lastSpawn;
+
+	protected SpawnAreaObserver exitObserver;
+
+	protected unsigned int spawnGroupTemplateCRC;
+
+	@dereferenced
+	protected Vector<SpawnArea> noSpawnAreas;
+
+	protected int tier;
+	protected int spawnConstant;
+
+	public final static int MINSPAWNINTERVAL = 2000; //msec
+
+	public SpawnArea() {
+		spawnGroupTemplateCRC = 0;
+		totalSpawnCount = 0;
+		maxSpawnLimit = 0;
+		spawnTypes.setNullValue(0);
+		exitObserver = null;
+		spawnConstant = 0;
+		Logger.setLoggingName("SpawnArea");
+	}
+
+	@local
+	@dereferenced
+	@dirty
+	public native Vector3 getRandomPosition(SceneObject player);
+
+	public native int notifyObserverEvent(unsigned int eventType, Observable observable, ManagedObject arg1, long arg2);
+
+	@preLocked
+	public void setTemplate(unsigned int tempCRC) {
+		spawnGroupTemplateCRC = tempCRC;
+	}
+
+	@preLocked
+	public void setTier(int n) {
+		tier = n;
+	}
+
+	@preLocked
+	public void setSpawnConstant(int n) {
+		spawnConstant = n;
+	}
+
+	@preLocked
+	public void setMaxSpawnLimit(int n) {
+		maxSpawnLimit = n;
+	}
+
+	@preLocked
+	public void addNoSpawnArea(SpawnArea area) {
+		noSpawnAreas.add(area);
+	}
+
+	@local
+	@preLocked
+	public void setSpawnGroup(SpawnGroup group) {
+		spawnGroup = group;
+	}
+
+	@local
+	@dirty
+	public native SpawnGroup getSpawnGroup();
+
+	public void enqueueEnterEvent(SceneObject obj) {
+		notifyEnter(obj);
+	}
+
+	public native void notifyEnter(SceneObject object);
+	public native void notifyExit(SceneObject object);
+
+	@dirty
+	public native void notifyPositionUpdate(QuadTreeEntry obj);
+
+	public native int tryToSpawn(SceneObject object);
+}
